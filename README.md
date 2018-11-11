@@ -15,15 +15,19 @@ serviceC
 serviceD
 serviceE
 
-$ dignore serviceA serviceB
+$ dignore -o - serviceA serviceB
 serviceA/some_rules
 serviceB/node_modules
 serviceC
 serviceD
 serviceE
 
-$ dignore serviceA serviceB > .dockerignore
+$ dignore serviceA serviceB
 $ docker build -f serviceA/Dockerfile .
+```
+or
+```bash
+$ docker run orisano/dignore serviceA serviceB
 ```
 
 ## Author
