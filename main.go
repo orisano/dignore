@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,11 +12,23 @@ import (
 	"strings"
 )
 
+var out io.Writer = os.Stdout
+
 func main() {
+	filename := flag.String("o", ".dockerignore", "output filename")
 	flag.Parse()
 
 	log.SetFlags(0)
 	log.SetPrefix("dignore: ")
+
+	if *filename != "-" {
+		f, err := os.Create(*filename)
+		if err != nil {
+			log.Fatal("failed to create file:", err)
+		}
+		defer f.Close()
+		out = f
+	}
 
 	directories := flag.Args()
 	fileInfos, err := ioutil.ReadDir(".")
@@ -34,7 +47,7 @@ func main() {
 		if _, ok := required[n]; ok {
 			appendPrefix(n)
 		} else {
-			fmt.Println(n)
+			fmt.Fprintln(out, n)
 		}
 	}
 }
@@ -61,6 +74,6 @@ func appendPrefix(name string) {
 			fmt.Fprintf(os.Stderr, "warning: unsupported ! syntax: %v", t)
 			continue
 		}
-		fmt.Println(filepath.Join(name, t))
+		fmt.Fprintln(out, filepath.Join(name, t))
 	}
 }
