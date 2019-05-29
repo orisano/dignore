@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -15,25 +16,31 @@ import (
 var out io.Writer = os.Stdout
 
 func main() {
-	filename := flag.String("o", ".dockerignore", "output filename")
+	filename := flag.String("o", "", `output filename (default: "$dir/.dockerignore")`)
+	dir := flag.String("dir", ".", "build context root directory")
 	flag.Parse()
 
 	log.SetFlags(0)
 	log.SetPrefix("dignore: ")
 
-	if *filename != "-" {
-		f, err := os.Create(*filename)
+	ignore := *filename
+	if ignore == "" {
+		ignore = filepath.Join(*dir, ".dockerignore")
+	}
+
+	if ignore != "-" {
+		f, err := os.Create(ignore)
 		if err != nil {
-			log.Fatal("failed to create file:", err)
+			log.Fatalf("failed to create file(path=%v): %v", ignore, err)
 		}
 		defer f.Close()
 		out = f
 	}
 
 	directories := flag.Args()
-	fileInfos, err := ioutil.ReadDir(".")
+	fileInfos, err := ioutil.ReadDir(*dir)
 	if err != nil {
-		log.Fatal("failed to readdir:", err)
+		log.Fatalf("failed to readdir(dir=%v): %v", *dir, err)
 	}
 	required := map[string]struct{}{}
 	for _, d := range directories {
@@ -45,20 +52,20 @@ func main() {
 		}
 		n := fi.Name()
 		if _, ok := required[n]; ok {
-			appendPrefix(n)
+			appendPrefix(*dir, n)
 		} else {
 			fmt.Fprintln(out, n)
 		}
 	}
 }
 
-func appendPrefix(name string) {
-	f, err := os.Open(filepath.Join(name, ".dockerignore"))
+func appendPrefix(dir, name string) {
+	f, err := os.Open(filepath.Join(dir, name, ".dockerignore"))
 	if os.IsNotExist(err) {
 		return
 	}
 	if err != nil {
-		log.Fatalf("failed to open .dockerignore on %v: %v", name, err)
+		log.Fatalf("failed to open .dockerignore on %v: %v", filepath.Join(dir, name), err)
 	}
 	defer f.Close()
 	bs := bufio.NewScanner(f)
@@ -70,10 +77,6 @@ func appendPrefix(name string) {
 		if strings.HasPrefix(t, "#") {
 			continue
 		}
-		if strings.HasPrefix(t, "!") {
-			fmt.Fprintf(os.Stderr, "warning: unsupported ! syntax: %v", t)
-			continue
-		}
-		fmt.Fprintln(out, filepath.Join(name, t))
+		fmt.Fprintln(out, path.Join(name, t))
 	}
 }
