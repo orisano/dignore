@@ -31,7 +31,7 @@ $ docker run orisano/dignore serviceA serviceB
 ```
 
 ## Author
-Nao YONASHIRO (@orisano)
+Nao Yonashiro (@orisano)
 
 ## License
 MIT
