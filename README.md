@@ -3,7 +3,7 @@ dockerignore generator for monorepo.
 
 ## Installation
 ```bash
-go get -u github.com/orisano/dignore
+go install github.com/orisano/dignore@latest
 ```
 
 ## How to use
